@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Weather client</title>
+    <script type="text/javascript">
+        function initFavorites() {
+            loadFavorites();
+        }
+        window.onload = initFavorites;
+    </script>
+</head>
+<body>
+
+<h2>Henna's Weather Service</h2>
+
+<label>Search weather for:</label>
+<div style="position:relative; width:220px; height:30px; border:0; padding:0; margin:0;">
+
+    <select id="favoritesComboBox"
+            style="position:absolute; top:0px; left:0px; width:200px; height:25px; line-height:20px; margin:0; padding:0;"
+            onchange="document.getElementById('displayValue').value = this.options[this.selectedIndex].text;
+                      document.getElementById('idValue').value = this.options[this.selectedIndex].value;">
+    </select>
+
+    <input type="text" name="displayValue" id="displayValue" onfocus="this.select()"
+           style="position:absolute; top:0px;left:0px; width:180px; height:21px; border:1px solid #556;">
+    <input name="idValue" id="idValue" type="hidden">
+
+    <button type="button" onclick="onSearch()"
+            style="position:absolute; top:-1px; left:205px; width:68px; height: 27px">Search</button>
+</div>
+
+<button type="button" onclick="onAddFavorites()" style="height: 27px">Add to Favorites</button>
+<button type="button" onclick="onRemoveFavorites()" style="height: 27px">Remove from Favorites</button>
+
+<p id="results"></p>
+
+<script type="text/javascript" language="javascript">
+    function loadFavorites() {
+        document.getElementById("displayValue").value = "";
+        document.getElementById("favoritesComboBox").innerHTML = "<option></option>";
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                var response = JSON.parse(this.responseText);
+                for (i = 0; i < response.content.length; i++) {
+                    var location = response.content[i].location;
+                    var selfLink = response.content[i].links[0].href;
+                    var showOption = "<option value='" + selfLink + "'>" + location + "</option>";
+                    document.getElementById("favoritesComboBox").innerHTML += showOption;
+                }
+            }
+        };
+
+        var uri = "http://localhost:8080/favorites/";
+        xhttp.open("GET", uri, true);
+        xhttp.send();
+    }
+
+    function onSearch() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                var response = JSON.parse(this.responseText);
+                var showResult = "";
+                showResult += "<b>" + response.location + "</b>" + "<br>" +
+                              "&emsp;Now: " + response.currentTemperature + "&deg;<br>" +
+                              "&emsp;Tomorrow: " + response.tomorrowTemperature + "&deg;";
+                document.getElementById("results").innerHTML = showResult;
+            }
+        };
+
+        var location = document.getElementById("displayValue").value;
+        if (location.length == 0) {
+            return;
+        }
+        var uri = "http://localhost:8080/weather/" + location;
+        xhttp.open("GET", uri, true);
+        xhttp.send();
+    }
+
+    function onAddFavorites() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                console.log(this.responseText);
+                var response = JSON.parse(this.responseText);
+                loadFavorites();
+            }
+        }
+
+        var location = document.getElementById("displayValue").value;
+        if (location.length == 0) {
+            return;
+        }
+        var uri = "http://localhost:8080/favorites/" + location;
+        xhttp.open("POST", uri, true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send();
+    }
+
+    function onRemoveFavorites() {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                loadFavorites();
+            }
+        }
+
+        var uri = document.getElementById("idValue").value;
+        xhttp.open("DELETE", uri, true);
+        xhttp.setRequestHeader("Content-type", "application/json");
+        xhttp.send();
+    }
+
+</script>
+</body>
+</html>
+
